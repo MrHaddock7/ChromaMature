@@ -9,22 +9,18 @@ import pandas as pd
 import re
 
 
-def extract_and_compute(filename, start_num):
-    """
-    Extract the last four digits from the filename and convert them to a timestamp value.
+def pictures(folder_path):
+    # Adjust the file extensions if needed
+    valid_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".tif")
+    all_files = os.listdir(folder_path)
 
-    :param filename: The name of the file.
-    :return: Extracted timestamp value.
-    """
-    # Extract the last four digits from the filename using regular expression
-    match = re.search(r"(\d{4})\.JPG$", filename)
-    if not match:
-        raise ValueError("Filename does not contain the required four digits pattern.")
+    # Filter image files only
+    image_files = [f for f in all_files if f.lower().endswith(valid_extensions)]
 
-    timestamp_value = int(match.group(1))
-    computed_value = (timestamp_value * 5) - (start_num * 5)
+    # Sort them if needed (though we assume they are already sorted)
+    image_files.sort()
 
-    return computed_value
+    return image_files
 
 
 def get_color_intensity(image, coordinates, roi_size=5):
@@ -48,37 +44,41 @@ def get_color_intensity(image, coordinates, roi_size=5):
     return mean_gray_intensity
 
 
-def process_images(folder_path, coordinates, start_num, roi_size=5):
+def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
     """
     Process all images in the given folder and calculate color intensity and vibrancy
     at the specified coordinates.
     """
     df = pd.read_csv(coordinates)
     results = []
-    for filename in os.listdir(folder_path):
-        if filename.lower().endswith((".png", ".jpg", ".jpeg", ".tif", ".bmp")):
-            image_path = os.path.join(folder_path, filename)
-            image = cv2.imread(image_path)
-            if image is not None:
-                computed_value = extract_and_compute(filename, start_num)
-                for sample in df["name"].unique().tolist():
-                    grays = []
-                    sample_coords = df[df["name"] == sample][["x", "y"]]
-                    for _, row in sample_coords.iterrows():
-                        coord = (row["x"], row["y"])
-                        # Compute the color intensity using your function
-                        gray = get_color_intensity(image, coord, roi_size)
-                        grays.append(gray)
 
-                    results.append(
-                        (
-                            computed_value,
-                            sample,
-                            df[df["name"] == sample]["color"].tolist()[0],
-                            np.mean(grays),
-                            grays,
-                        )
+    filenames = pictures(folder_path)
+    time = -time_interval
+    for filename in filenames:
+
+        image_path = os.path.join(folder_path, filename)
+        image = cv2.imread(image_path)
+
+        if image is not None:
+            time += time_interval
+
+            for sample in df["name"].unique().tolist():
+                grays = []
+                sample_coords = df[df["name"] == sample][["x", "y"]]
+                for _, row in sample_coords.iterrows():
+                    coord = (row["x"], row["y"])
+                    gray = get_color_intensity(image, coord, roi_size)
+                    grays.append(gray)
+
+                results.append(
+                    (
+                        time,
+                        sample,
+                        df[df["name"] == sample]["color"].tolist()[0],
+                        np.mean(grays),
+                        grays,
                     )
+                )
     return results
 
 
