@@ -49,7 +49,10 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
     Process all images in the given folder and calculate color intensity and vibrancy
     at the specified coordinates.
     """
-    df = pd.read_csv(coordinates)
+    if type(coordinates) == str:
+        df = pd.read_csv(coordinates)
+    else:
+        df = coordinates
     results = []
 
     filenames = pictures(folder_path)
@@ -96,11 +99,17 @@ def csv_writer(results, path=""):
     df = pd.read_csv(csv_path)
     df_sorted = df.sort_values(by="Time")
     df_sorted.to_csv(csv_path, index=False)
+    return df_sorted
 
 
-if __name__ == "__main__":
-    # Process images
-    results = process_images()
+def run_processing(output_dir, picture_folder, coords, time_intervals=5, roi_size=5):
+    results = process_images(picture_folder, coords, time_intervals, roi_size)
+    return csv_writer(results, output_dir)
 
-    # Write results to CSV
-    csv_writer(results, path="results.csv")
+
+# if __name__ == "__main__":
+#     # Process images
+#     results = process_images()
+
+#     # Write results to CSV
+#     csv_writer(results, path="results.csv")
