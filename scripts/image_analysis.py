@@ -102,11 +102,16 @@ def csv_writer(results, path=""):
     return df_sorted
 
 
-def run_processing(output_dir, picture_folder, coords, time_intervals=5, roi_size=5):
+def run_processing(output_path, picture_folder, coords, time_intervals=5, roi_size=5):
     results = process_images(picture_folder, coords, time_intervals, roi_size)
-    return csv_writer(results, output_dir)
+    return csv_writer(results, output_path)
 
 
+run_processing(
+    r"X:\GitHub\ChromaMature",
+    r"C:\Users\willi\OneDrive - Uppsala universitet\Igem\Images\Code\Pictures",
+    r"X:\GitHub\ChromaMature\data.csv",
+)
 # if __name__ == "__main__":
 #     # Process images
 #     results = process_images()
