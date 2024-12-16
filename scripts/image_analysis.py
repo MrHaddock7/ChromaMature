@@ -6,7 +6,7 @@ import numpy as np
 import csv
 from matplotlib import pyplot as plt
 import pandas as pd
-import re
+import 
 
 
 def pictures(folder_path):
@@ -20,7 +20,7 @@ def pictures(folder_path):
     # Sort them if needed (though we assume they are already sorted)
     image_files.sort()
 
-    return image_files
+    return enumerate(image_files)
 
 
 def get_color_intensity(image, coordinates, roi_size=5):
@@ -57,8 +57,52 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
 
     filenames = pictures(folder_path)
     time = -time_interval
+    filecount = 0
     for filename in filenames:
+        filecount += 1
+        print(filecount, "/", len(filenames))
+        image_path = os.path.join(folder_path, filename)
+        image = cv2.imread(image_path)
 
+        if image is not None:
+            time += time_interval
+
+            for sample in df["name"].unique().tolist():
+                grays = []
+                sample_coords = df[df["name"] == sample][["x", "y"]]
+                for _, row in sample_coords.iterrows():
+                    coord = (row["x"], row["y"])
+                    gray = get_color_intensity(image, coord, roi_size)
+                    grays.append(gray)
+
+                results.append(
+                    (
+                        time,
+                        sample,
+                        df[df["name"] == sample]["color"].tolist()[0],
+                        np.mean(grays),
+                        grays,
+                    )
+                )
+    return results
+
+
+def process_images_parallel(folder_path, coordinates, time_interval=5, roi_size=5):
+    """
+    Process all images in the given folder and calculate color intensity and vibrancy
+    at the specified coordinates.
+    """
+    if type(coordinates) == str:
+        df = pd.read_csv(coordinates)
+    else:
+        df = coordinates
+    results = []
+
+    filenames = pictures(folder_path)
+    
+
+
+    for filename in filenames:
         image_path = os.path.join(folder_path, filename)
         image = cv2.imread(image_path)
 
@@ -108,9 +152,9 @@ def run_processing(output_path, picture_folder, coords, time_intervals=5, roi_si
 
 
 run_processing(
-    r"X:\GitHub\ChromaMature",
-    r"C:\Users\willi\OneDrive - Uppsala universitet\Igem\Images\Code\Pictures",
-    r"X:\GitHub\ChromaMature\data.csv",
+    "",
+    "/Users/william/Library/CloudStorage/OneDrive-Uppsalauniversitet/Igem/Images/Code/Pictures/Thanos_run",
+    "data.csv",
 )
 # if __name__ == "__main__":
 #     # Process images
