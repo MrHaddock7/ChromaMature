@@ -6,7 +6,7 @@ import numpy as np
 import csv
 from matplotlib import pyplot as plt
 import pandas as pd
-import 
+from concurrent import futures
 
 
 def pictures(folder_path):
@@ -88,49 +88,46 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
 
 
 def process_images_parallel(folder_path, coordinates, time_interval=5, roi_size=5):
-    """
-    Process all images in the given folder and calculate color intensity and vibrancy
-    at the specified coordinates.
-    """
-    if type(coordinates) == str:
+    if isinstance(coordinates, str):
         df = pd.read_csv(coordinates)
     else:
         df = coordinates
-    results = []
 
     filenames = pictures(folder_path)
-    
 
+    def analysis(filename):
+        # Create a local list to store results for this image
+        local_results = []
 
-    for filename in filenames:
-        image_path = os.path.join(folder_path, filename)
+        image_path = os.path.join(folder_path, filename[1])
         image = cv2.imread(image_path)
+        time = filename[0] * time_interval
 
-        if image is not None:
-            time += time_interval
+        for sample in df["name"].unique():
+            sample_coords = df[df["name"] == sample][["y", "x"]]
+            grays = []
+            for _, row in sample_coords.iterrows():
+                coord = (row["y"], row["x"])
+                gray = get_color_intensity(image, coord, roi_size)
+                grays.append(gray)
 
-            for sample in df["name"].unique().tolist():
-                grays = []
-                sample_coords = df[df["name"] == sample][["x", "y"]]
-                for _, row in sample_coords.iterrows():
-                    coord = (row["x"], row["y"])
-                    gray = get_color_intensity(image, coord, roi_size)
-                    grays.append(gray)
+            color = df[df["name"] == sample]["color"].iloc[0]
+            local_results.append((time, sample, color, np.mean(grays), grays))
 
-                results.append(
-                    (
-                        time,
-                        sample,
-                        df[df["name"] == sample]["color"].tolist()[0],
-                        np.mean(grays),
-                        grays,
-                    )
-                )
+        return local_results
+
+    # Execute analysis in parallel
+    with futures.ThreadPoolExecutor() as ex:
+        partial_results = list(ex.map(analysis, filenames))
+
+    # Flatten the list of lists into a single results list
+    results = [item for sublist in partial_results for item in sublist]
+
     return results
 
 
-def csv_writer(results, path=""):
-    headers = ["Time", "Name", "Color", "Mean_gray", "gray"]
+def csv_writer(results, path):
+    headers = ["Time", "Name", "Color", "Mean_gray", "Gray"]
     csv_path = path
 
     with open(csv_path, mode="w", newline="") as csvfile:
@@ -147,12 +144,12 @@ def csv_writer(results, path=""):
 
 
 def run_processing(output_path, picture_folder, coords, time_intervals=5, roi_size=5):
-    results = process_images(picture_folder, coords, time_intervals, roi_size)
+    results = process_images_parallel(picture_folder, coords, time_intervals, roi_size)
     return csv_writer(results, output_path)
 
 
 run_processing(
-    "",
+    "/Users/william/Documents/Github/ChromaMature/data_output.csv",
     "/Users/william/Library/CloudStorage/OneDrive-Uppsalauniversitet/Igem/Images/Code/Pictures/Thanos_run",
     "data.csv",
 )

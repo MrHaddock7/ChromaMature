@@ -373,3 +373,4 @@ Backup[ ]of[ ]*.key/
 Backup[ ]of[ ]*.numbers/
 data/.DS_Store
 tests/
+.vscode/
