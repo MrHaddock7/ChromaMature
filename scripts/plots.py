@@ -80,7 +80,7 @@ def boxplot_values(df, name) -> list:
     return halftimes
 
 
-def boxplot(df) -> None:
+def boxplot(df, output_path: str) -> None:
 
     if type(df) == str:
         df = pd.read_csv(df)
@@ -97,11 +97,13 @@ def boxplot(df) -> None:
 
     print(data)
     print(lables)
-
+    plt.figure(figsize=(12, 8))
     plt.boxplot(data, labels=lables, patch_artist=True)
     plt.ylabel("Halftimes")
     plt.xlabel("Samples")
-    plt.show()
+    plt.savefig()
 
 
-boxplot("/Users/william/Documents/Github/ChromaMature/tests/data_output.csv")
+boxplot(
+    "/Users/william/Library/CloudStorage/OneDrive-Uppsalauniversitet/Igem/Wiki/Plots/th_output.csv"
+)

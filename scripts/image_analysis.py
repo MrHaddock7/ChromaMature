@@ -112,7 +112,11 @@ def process_images_parallel(folder_path, coordinates, time_interval=5, roi_size=
                 grays.append(gray)
 
             color = df[df["name"] == sample]["color"].iloc[0]
-            local_results.append((time, sample, color, np.mean(grays), grays))
+
+            if np.mean(grays) == -1:
+                continue
+            else:
+                local_results.append((time, sample, color, np.mean(grays), grays))
 
         return local_results
 
