@@ -1,10 +1,10 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.signal import savgol_filter
 import ast
 import seaborn as sns
 import os
+from typing import *
 
 
 def halftime(x, y):
@@ -27,13 +27,81 @@ def halftime(x, y):
     return halftime_x / 60
 
 
-def scatterplot(df, name):
+def scatterplot(
+    df,
+    name,
+    figsize: Optional[Tuple[int, int]] = None,
+    yrange: Optional[Tuple[int, int]] = None,
+    output_path: str = None,
+) -> None:
+
+    if type(df) == str:
+        df = pd.read_csv(df)
+
     df = df[df["Name"] == name]
     y = df["Mean_gray"]
-    x = df["Time"]
+    x = df["Time"] / 60
 
-    plt.scatter(x, y, "o", c=df["Color"])
-    plt.xlabel("Time")
+    if figsize:
+        plt.figure(figsize=figsize)
+    else:
+        plt.figure()
+
+    plt.scatter(x, y, c=df["Color"])
+    plt.xlabel("Time [h]")
     plt.ylabel("Grayscale value")
+    plt.title(f"Mean grayscale values for sample {name}")
 
-    plt.savefig()
+    if yrange:
+        plt.ylim(yrange)
+
+    file_path = os.path.join(output_path, f"scatterplot_{name}.png")
+    plt.savefig(file_path, dpi=300)
+
+
+def boxplot_values(df, name) -> list:
+
+    if type(df) == str:
+        df = pd.read_csv(df)
+
+    df = df[df["Name"] == name]
+
+    halftimes = []
+
+    for i in range(len(ast.literal_eval(df["Gray"].tolist()[0]))):
+        x = []
+        y = []
+        for _, row in df.iterrows():
+            x.append(row["Time"])
+            y.append(ast.literal_eval(row["Gray"])[i])
+
+        halftimes.append(halftime(x, y))
+
+    return halftimes
+
+
+def boxplot(df) -> None:
+
+    if type(df) == str:
+        df = pd.read_csv(df)
+
+    names = df["Name"].unique()
+
+    data = []
+    lables = []
+
+    for name in names:
+        halftimes = boxplot_values(df, name)
+        data.append(halftimes)
+        lables.append(name)
+
+    print(data)
+    print(lables)
+
+    plt.boxplot(data, labels=lables, patch_artist=True)
+    plt.ylabel("Halftimes")
+    plt.xlabel("Samples")
+    plt.show()
+
+
+boxplot("/Users/william/Documents/Github/ChromaMature/tests/data_output.csv")
