@@ -5,3 +5,4 @@ scipy
 seaborn
 opencv-python
 pillow
+tk

@@ -1,8 +1,9 @@
-from .scripts.image_analysis import *
-from .scripts.plots import *
+from scripts.image_analysis import *
+from scripts.plots import *
 import argparse
 import os
 import pandas as pd
+import logging
 
 
 def main(
@@ -14,12 +15,23 @@ def main(
     time_interval,
     roi_size,
 ):
-    output_path = f"{output_path}/{run_name}"
-    if not os.path.exists():
-        os.makedirs(output_path)
 
-    os.makedirs(f"{output_path}/scatterplots")
-    os.makedirs(f"{output_path}/boxplot")
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.FileHandler("project.log")],
+    )
+
+    logger = logging.getLogger(__name__)
+
+    logger.info("Starting main function.")
+    output_path = f"{output_path}/{run_name}"
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    if not os.path.exists(f"{output_path}/scatterplots"):
+        os.makedirs(f"{output_path}/scatterplots")
+    if not os.path.exists(f"{output_path}/boxplots"):
+        os.makedirs(f"{output_path}/boxplots")
 
     try:
         if parallel:
@@ -31,19 +43,20 @@ def main(
                 im_path, coords_path, time_interval, roi_size
             )
 
-        csv_writer(image_results, output_path)
-
+        image_results = csv_writer(image_results, output_path)
+        logger.info("Image analysis complete, generating plots.")
         for name in image_results["Name"].unique():
             scatterplot(image_results, name, output_path=f"{output_path}/scatterplots")
 
         boxplot(image_results, output_path=f"{output_path}/boxplots")
 
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}", exc_info=True)
 
 
 if __name__ == "__main__":
 
+    logger.info("Parsing arguments and starting script.")
     parser = argparse.ArgumentParser(
         description="Processes an directory of images to find halftime values"
     )
@@ -105,4 +118,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    coords_path_argument = args.coords
+    main(
+        coords_path=args.coords,
+        output_path=args.output,
+        im_path=args.impath,
+        run_name=args.name,
+        parallel=args.parallel,
+        time_interval=args.time,
+        roi_size=args.roi_size,
+    )

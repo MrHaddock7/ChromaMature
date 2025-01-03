@@ -7,9 +7,13 @@ import csv
 from matplotlib import pyplot as plt
 import pandas as pd
 from concurrent import futures
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def pictures(folder_path):
+    logger.info(f"Retrieving pictures from {folder_path}.")
     # Adjust the file extensions if needed
     valid_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".tif")
     all_files = os.listdir(folder_path)
@@ -28,6 +32,7 @@ def get_color_intensity(image, coordinates, roi_size=5):
     Get the color intensity and vibrancy at the given coordinates.
     Coordinates should be a list of (x, y) tuples.
     """
+    logger.debug(f"Calculating color intensity at {coordinates}.")
     x, y = coordinates
     if 0 <= x < image.shape[1] and 0 <= y < image.shape[0]:
         x1, y1 = max(0, x - roi_size), max(0, y - roi_size)
@@ -36,7 +41,7 @@ def get_color_intensity(image, coordinates, roi_size=5):
         roi = image[y1:y2, x1:x2]
 
         gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        mean_gray_intensity = np.mean(gray_roi)
+        mean_gray_intensity = float(np.mean(gray_roi))
 
     else:
         mean_gray_intensity = -1
@@ -49,6 +54,7 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
     Process all images in the given folder and calculate color intensity and vibrancy
     at the specified coordinates.
     """
+    logger.info("Processing images in sequential mode.")
     if type(coordinates) == str:
         df = pd.read_csv(coordinates)
     else:
@@ -57,11 +63,8 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
 
     filenames = pictures(folder_path)
     time = -time_interval
-    filecount = 0
     for filename in filenames:
-        filecount += 1
-        print(filecount, "/", len(filenames))
-        image_path = os.path.join(folder_path, filename)
+        image_path = os.path.join(folder_path, filename[1])
         image = cv2.imread(image_path)
 
         if image is not None:
@@ -69,9 +72,9 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
 
             for sample in df["name"].unique().tolist():
                 grays = []
-                sample_coords = df[df["name"] == sample][["x", "y"]]
+                sample_coords = df[df["name"] == sample][["y", "x"]]
                 for _, row in sample_coords.iterrows():
-                    coord = (row["x"], row["y"])
+                    coord = (row["y"], row["x"])
                     gray = get_color_intensity(image, coord, roi_size)
                     grays.append(gray)
 
@@ -88,6 +91,7 @@ def process_images(folder_path, coordinates, time_interval=5, roi_size=5):
 
 
 def process_images_parallel(folder_path, coordinates, time_interval=5, roi_size=5):
+    logger.info("Processing images in parallel mode.")
     if isinstance(coordinates, str):
         df = pd.read_csv(coordinates)
     else:
@@ -131,35 +135,20 @@ def process_images_parallel(folder_path, coordinates, time_interval=5, roi_size=
 
 
 def csv_writer(results, path):
+    logger.info(f"Writing results to CSV at {path}.")
     headers = ["Time", "Name", "Color", "Mean_gray", "Gray"]
     csv_path = path
+    output_file = os.path.join(path, "results.csv")
 
-    with open(csv_path, mode="w", newline="") as csvfile:
+    with open(output_file, mode="w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         if csvfile.tell() == 0:
             writer.writerow(headers)
         for result in results:
             writer.writerow(result)
 
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(output_file)
     df_sorted = df.sort_values(by="Time")
-    df_sorted.to_csv(csv_path, index=False)
+
+    df_sorted.to_csv(output_file, index=False)
     return df_sorted
-
-
-def run_processing(output_path, picture_folder, coords, time_intervals=5, roi_size=5):
-    results = process_images_parallel(picture_folder, coords, time_intervals, roi_size)
-    return csv_writer(results, output_path)
-
-
-run_processing(
-    "/Users/william/Documents/Github/ChromaMature/data_output.csv",
-    "/Users/william/Library/CloudStorage/OneDrive-Uppsalauniversitet/Igem/Images/Code/Pictures/Thanos_run",
-    "data.csv",
-)
-# if __name__ == "__main__":
-#     # Process images
-#     results = process_images()
-
-#     # Write results to CSV
-#     csv_writer(results, path="results.csv")

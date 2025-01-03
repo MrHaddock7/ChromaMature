@@ -5,9 +5,13 @@ import ast
 import seaborn as sns
 import os
 from typing import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def halftime(x, y):
+    logger.info("Calculating halftime.")
     """
     Calculate the halftime (the x-value where y reaches half of its total change).
     """
@@ -34,6 +38,7 @@ def scatterplot(
     yrange: Optional[Tuple[int, int]] = None,
     output_path: str = None,
 ) -> None:
+    logger.info(f"Creating scatterplot for {name}...")
 
     if type(df) == str:
         df = pd.read_csv(df)
@@ -60,6 +65,7 @@ def scatterplot(
 
 
 def boxplot_values(df, name) -> list:
+    logger.info(f"Calculating boxplot values for {name}...")
 
     if type(df) == str:
         df = pd.read_csv(df)
@@ -81,6 +87,7 @@ def boxplot_values(df, name) -> list:
 
 
 def boxplot(df, output_path: str) -> None:
+    logger.info("Generating boxplot.")
 
     if type(df) == str:
         df = pd.read_csv(df)
@@ -101,9 +108,5 @@ def boxplot(df, output_path: str) -> None:
     plt.boxplot(data, labels=lables, patch_artist=True)
     plt.ylabel("Halftimes")
     plt.xlabel("Samples")
-    plt.savefig()
-
-
-boxplot(
-    "/Users/william/Library/CloudStorage/OneDrive-Uppsalauniversitet/Igem/Wiki/Plots/th_output.csv"
-)
+    file_path = os.path.join(output_path, f"boxplot.png")
+    plt.savefig(file_path, dpi=300)
