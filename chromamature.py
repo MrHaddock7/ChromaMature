@@ -19,13 +19,14 @@ def main(
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[logging.FileHandler("project.log")],
+        handlers=[logging.FileHandler("chromamature.log")],
     )
 
     logger = logging.getLogger(__name__)
 
     logger.info("Starting main function.")
     output_path = f"{output_path}/{run_name}"
+
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     if not os.path.exists(f"{output_path}/scatterplots"):
@@ -35,14 +36,17 @@ def main(
 
     try:
         if parallel:
+            logger.info("Running image analysis in parallel mode.")
             image_results = process_images_parallel(
                 im_path, coords_path, time_interval, roi_size
             )
         else:
+            logger.info("Running image analysis in sequential mode.")
             image_results = process_images(
                 im_path, coords_path, time_interval, roi_size
             )
 
+        logger.info("Image analysis complete, writing results to csv.")
         image_results = csv_writer(image_results, output_path)
         logger.info("Image analysis complete, generating plots.")
         for name in image_results["Name"].unique():
