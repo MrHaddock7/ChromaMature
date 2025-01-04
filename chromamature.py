@@ -2,7 +2,6 @@ from scripts.image_analysis import *
 from scripts.plots import *
 import argparse
 import os
-import pandas as pd
 import logging
 
 
