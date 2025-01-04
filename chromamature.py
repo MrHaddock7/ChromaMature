@@ -16,13 +16,15 @@ def main(
     roi_size,
 ):
 
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+
+    logger = logging.getLogger(__name__)
+
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[logging.FileHandler("chromamature.log")],
     )
-
-    logger = logging.getLogger(__name__)
 
     logger.info("Starting main function.")
     output_path = f"{output_path}/{run_name}"
