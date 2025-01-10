@@ -32,11 +32,29 @@ def halftime(x, y):
         logger.error(f"Error: {e}", exc_info=True)
 
 
+def scatterplot_range(df):
+    logger.info("Starting scatterplot_range")
+    names = df["Name"].unique()
+
+    max_range = -1
+
+    for i in names:
+
+        df_name = df[df["Name"] == i]
+        range = df_name["Mean_gray"].max() - df_name["Mean_gray"].min()
+        print(range)
+
+        if range > max_range:
+            max_range = range
+
+    return max_range
+
+
 def scatterplot(
     df,
     name,
     figsize: Optional[Tuple[int, int]] = None,
-    yrange: Optional[Tuple[int, int]] = None,
+    yrange: Optional[Union[Tuple[int, int], int]] = None,
     output_path: str = None,
 ) -> None:
     logger.info(f"Creating scatterplot for {name}...")
@@ -60,7 +78,12 @@ def scatterplot(
         plt.title(f"Mean grayscale values for sample {name}")
 
         if yrange:
-            plt.ylim(yrange)
+            if isinstance(yrange, tuple):
+                plt.ylim(yrange)
+            else:
+                difference = yrange - (y.max() - y.min())
+
+                plt.ylim(ymin=y.min() - difference / 2, ymax=y.max() + difference / 2)
 
         file_path = os.path.join(output_path, f"scatterplot_{name}.png")
         plt.savefig(file_path, dpi=300)

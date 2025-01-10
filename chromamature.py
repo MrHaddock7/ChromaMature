@@ -13,6 +13,7 @@ def main(
     parallel,
     time_interval,
     roi_size,
+    yrange,
 ):
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -49,9 +50,19 @@ def main(
 
         logger.info("Image analysis complete, writing results to csv.")
         image_results = csv_writer(image_results, output_path)
+
         logger.info("Image analysis complete, generating plots.")
+
+        if yrange is None:
+            yrange = scatterplot_range(image_results)
+
         for name in image_results["Name"].unique():
-            scatterplot(image_results, name, output_path=f"{output_path}/scatterplots")
+            scatterplot(
+                image_results,
+                name,
+                output_path=f"{output_path}/scatterplots",
+                yrange=yrange,
+            )
 
         boxplot(image_results, output_path=f"{output_path}/boxplots")
 
@@ -121,6 +132,13 @@ if __name__ == "__main__":
         type=int,
     )
 
+    parser.add_argument(
+        "-yr",
+        "--yrange",
+        help="Determines the y-range for the scatter plots. Could be either a touple, (ymin, ymax) or an integer",
+        default=None,
+    )
+
     args = parser.parse_args()
 
     main(
@@ -131,4 +149,5 @@ if __name__ == "__main__":
         parallel=args.parallel,
         time_interval=args.time,
         roi_size=args.roi_size,
+        yrange=args.yrange,
     )
