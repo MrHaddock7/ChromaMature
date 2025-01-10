@@ -42,7 +42,6 @@ def scatterplot_range(df):
 
         df_name = df[df["Name"] == i]
         range = df_name["Mean_gray"].max() - df_name["Mean_gray"].min()
-        print(range)
 
         if range > max_range:
             max_range = range
@@ -135,8 +134,6 @@ def boxplot(df, output_path: str) -> None:
             data.append(halftimes)
             lables.append(name)
 
-        print(data)
-        print(lables)
         plt.figure(figsize=(12, 8))
         plt.boxplot(data, labels=lables, patch_artist=True)
         plt.ylabel("Halftimes")
