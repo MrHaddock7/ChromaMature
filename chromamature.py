@@ -14,6 +14,10 @@ def main(
     time_interval,
     roi_size,
     yrange,
+    interval_size,
+    votes,
+    jump_size,
+    clean_data,
 ):
 
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -50,6 +54,15 @@ def main(
 
         logger.info("Image analysis complete, writing results to csv.")
         image_results = csv_writer(image_results, output_path)
+
+        if clean_data:
+            image_results = clean_data(
+                image_results,
+                interval_size,
+                votes,
+                time_interval,
+                interval_jump=jump_size,
+            )
 
         logger.info("Image analysis complete, generating plots.")
 
@@ -139,6 +152,32 @@ if __name__ == "__main__":
         default=None,
     )
 
+    parser.add_argument(
+        "-iz",
+        "--interval_size",
+        help="The interval size when cleaning the data",
+        default=20,
+    )
+
+    parser.add_argument(
+        "-v", "--votes", help="Total amount of votes for it to be an outlier", default=4
+    )
+
+    parser.add_argument(
+        "-jz",
+        "--jump_size",
+        help="Size of the jump in relation of the readingframe for data cleaning, e.g -jz 5 will result in a 20% jump of the reading frame relative to the length of the reading frame",
+        default=5,
+    )
+
+    parser.add_argument(
+        "-cd",
+        "--clean_data",
+        help="Cleans data (not recomended yet)",
+        default=False,
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     main(
@@ -150,4 +189,8 @@ if __name__ == "__main__":
         time_interval=args.time,
         roi_size=args.roi_size,
         yrange=args.yrange,
+        jump_size=args.jump_size,
+        votes=args.votes,
+        interval_size=args.interval_size,
+        clean_data=args.clean_data,
     )
