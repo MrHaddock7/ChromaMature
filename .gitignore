@@ -374,3 +374,4 @@ Backup[ ]of[ ]*.numbers/
 data/.DS_Store
 tests/
 .vscode/
+old_files/

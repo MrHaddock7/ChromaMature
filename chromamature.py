@@ -1,5 +1,6 @@
 from scripts.image_analysis import *
 from scripts.plots import *
+from scripts.stat_test import *
 import argparse
 import os
 import logging
@@ -55,6 +56,7 @@ def main(
         logger.info("Image analysis complete, writing results to csv.")
         image_results = csv_writer(image_results, output_path)
 
+        # Clean data not viable
         if clean_data:
             image_results = clean_data(
                 image_results,
@@ -77,7 +79,18 @@ def main(
                 yrange=yrange,
             )
 
-        boxplot(image_results, output_path=f"{output_path}/boxplots")
+        label, conf_interval = boxplot(
+            image_results, output_path=f"{output_path}/boxplots"
+        )
+
+        with open(f"{output_path}/bootstrap_results.txt", "w") as f:
+            # Write header
+            f.write("name, mean, conf_in\n")
+            for lab, ci in zip(label, conf_interval):
+                # ci is structured as ((lower, upper), mean)
+                conf_values, mean_value = ci
+                conf_str = f"[{conf_values[0]}, {conf_values[1]}]"
+                f.write(f"{lab}, {mean_value}, {conf_str}\n")
 
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
@@ -87,7 +100,7 @@ if __name__ == "__main__":
 
     logger.info("Parsing arguments and starting script.")
     parser = argparse.ArgumentParser(
-        description="Processes an directory of images to find halftime values"
+        description="Processes an directory of images to find halftime values of the color maturation"
     )
 
     parser.add_argument(
@@ -124,7 +137,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-p",
         "--parallel",
-        help="If you want to run the image analysis using parallelization (recomended)",
+        help="If you want to run the image analysis using parallelization (recommended)",
         default=False,
         action="store_true",
     )
@@ -148,7 +161,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-yr",
         "--yrange",
-        help="Determines the y-range for the scatter plots. Could be either a touple, (ymin, ymax) or an integer",
+        help="Determines the y-range for the scatter plots. Could be either a tuple, (ymin, ymax) or an integer",
         default=None,
     )
 
@@ -166,14 +179,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-jz",
         "--jump_size",
-        help="Size of the jump in relation of the readingframe for data cleaning, e.g -jz 5 will result in a 20% jump of the reading frame relative to the length of the reading frame",
+        help="Size of the jump in relation of the readingframe for data cleaning, e.g -jz 5 will result in a 20%% jump of the reading frame relative to the length of the reading frame",
         default=5,
     )
 
     parser.add_argument(
         "-cd",
         "--clean_data",
-        help="Cleans data (not recomended yet)",
+        help="Cleans data (not recommended yet)",
         default=False,
         action="store_true",
     )

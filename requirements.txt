@@ -6,3 +6,4 @@ seaborn
 opencv-python
 pillow
 tk
+ruptures
